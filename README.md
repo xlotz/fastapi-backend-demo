@@ -10,7 +10,7 @@
 权限认证使用OAuth2&Jwt
 
 参考 https://github.com/insistence/RuoYi-Vue3-FastAPI/tree/master?tab=readme-ov-file
-简化其部分功能，适用于内部使用的后台管理平台以及基于该平台的业务建设。
+简化其部分功能，如岗位信息、注册等，适用于内部使用的后台管理平台以及基于该平台的业务建设。
 
 ### 主要功能：
 

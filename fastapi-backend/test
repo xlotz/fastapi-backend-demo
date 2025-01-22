@@ -1,0 +1,57 @@
+@classmethod
+async def get_user_list_services
+    pass
+@classmethod
+async def check_user_allowed_services
+    pass
+@classmethod
+async def check_user_data_scope_services
+    pass
+@classmethod
+async def check_user_name_unique_services
+    pass
+@classmethod
+async def check_phonenumber_unique_services
+    pass
+@classmethod
+async def check_email_unique_services
+    pass
+@classmethod
+async def add_user_services
+    pass
+@classmethod
+async def edit_user_services
+    pass
+@classmethod
+async def delete_user_services
+    pass
+@classmethod
+async def user_detail_services
+    pass
+@classmethod
+async def user_profile_services
+    pass
+@classmethod
+async def reset_user_services
+    pass
+@classmethod
+async def batch_import_user_services
+    pass
+@classmethod
+async def get_user_import_template_services
+    pass
+@classmethod
+async def export_user_list_services
+    pass
+@classmethod
+async def get_user_role_allocated_list_services
+    pass
+@classmethod
+async def add_user_role_services
+    pass
+@classmethod
+async def delete_user_role_services
+    pass
+@classmethod
+async def detail_user_role_services
+    pass
