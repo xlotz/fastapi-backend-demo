@@ -29,10 +29,10 @@ async def get_captcha_image(request: Request):
         f'{RedisInitKeyConfig.CAPTCHA_CODES.key}:{session_id}', computed_result, ex=timedelta(minutes=2)
     )
 
-    res = CaptchaCode(
+    model_content = CaptchaCode(
         captchaEnabled=captcha_enabled, registerEnabled=register_enabled, img=image, uuid=session_id
     )
-    logger.info(res)
+    logger.info(model_content)
 
     return ResponseUtil.success(
         model_content=CaptchaCode(

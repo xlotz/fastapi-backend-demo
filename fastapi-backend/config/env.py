@@ -64,6 +64,18 @@ class RedisSettings(BaseSettings):
     redis_database: int = 2
 
 
+class SwaggerSettings:
+    """
+    本地ui文件
+    """
+
+    Swagger_PATH = os.path.join(os.path.abspath(os.getcwd()), 'static/swagger-ui')
+
+    # def __init__(self):
+    #     if not os.path.exists(self.Swagger_PATH):
+    #         os.makedirs(self.Swagger_PATH)
+
+
 class UploadSettings:
     """
     上传配置
@@ -171,6 +183,14 @@ class GetConfig:
         return RedisSettings()
 
     @lru_cache()
+    def get_swagger_config(self):
+        """
+        获取swagger配置
+        :return:
+        """
+        return SwaggerSettings()
+
+    @lru_cache()
     def get_upload_config(self):
         """
         获取上传路径配置
@@ -223,6 +243,8 @@ JwtConfig = get_config.get_jwt_config()
 DataBaseConfig = get_config.get_database_config()
 # Redis配置
 RedisConfig = get_config.get_redis_config()
+# Swagger配置
+SwaggerConfig = get_config.get_swagger_config()
 # 上传配置
 UploadConfig = get_config.get_upload_config()
 # 日志配置

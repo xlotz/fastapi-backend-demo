@@ -32,10 +32,11 @@ async def login(
     :param db:
     :return:
     """
-    is_enabled = await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled')
 
-    captcha_enabled = True if is_enabled == 'true' else False
-    logger.info(f'是否启用验证码： {captcha_enabled}')
+    #is_enabled = await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled')
+    # captcha_enabled = True if is_enabled == 'true' else False
+    # logger.info(f'是否启用验证码： {captcha_enabled}')
+    logger.warning(f'xxxxxxxxxxxxx {form_data}')
     user = UserLogin(
         userName=form_data.username,
         password=form_data.password,
@@ -46,7 +47,7 @@ async def login(
     )
     logger.info(f'-----------------{user}')
     result = await LoginService.authenticate_user(request, db, user)
-    logger.info(f'-----------------{result}')
+    logger.info(f'-----------------{result[0]}, {user.login_info}')
     access_token_expires = timedelta(minutes=JwtConfig.jwt_expire_minutes)
     session_id = str(uuid.uuid4())
     access_token = await LoginService.create_access_token(

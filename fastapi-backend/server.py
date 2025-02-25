@@ -11,6 +11,10 @@ from utils.log_util import logger
 from module_admin.controller.login_controller import loginController
 from module_admin.controller.captcha_controller import captchaController
 from module_admin.controller.common_controller import commonController
+from module_admin.controller.user_controller import userController
+from module_admin.controller.dept_controller import deptController
+from module_admin.controller.role_controller import roleController
+from module_admin.controller.menu_controller import menuController
 
 
 # 请求生命周期事件
@@ -30,6 +34,8 @@ async def lifespan(app: FastAPI):
 
 # 初始化FastAPI对象
 app = FastAPI(
+    # docs_url=None,
+    # redoc_url=None,
     title=AppConfig.app_name,
     description=f'{AppConfig.app_name}API文档',
     version=AppConfig.app_version,
@@ -49,7 +55,13 @@ handle_exception(app)
 controller_list = [
     {'router': loginController, 'tags': ['登录管理']},
     {'router': captchaController, 'tags': ['验证码模块']},
+    {'router': userController, 'tags': ['系统管理-用户管理']},
+    {'router': deptController, 'tags': ['系统管理-部门管理']},
+    {'router': roleController, 'tags': ['系统管理-角色管理']},
+    {'router': menuController, 'tags': ['系统管理-菜单管理']},
     {'router': commonController, 'tags': ['通用模块']},
+
+
 
 ]
 
