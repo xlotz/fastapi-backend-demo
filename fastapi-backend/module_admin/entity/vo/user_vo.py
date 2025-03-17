@@ -1,12 +1,11 @@
 import re
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from pydantic.alias_generators import to_camel
-from pydantic_validation_decorator import NotBlank, Network, Size, Xss
+from pydantic_validation_decorator import Network, NotBlank, Size, Xss
 from typing import List, Literal, Optional, Union
 from sub_applications.exceptions.exception import ModelValidatorException
-from module_admin.annotation.pydantic_annotation import as_query
 from module_admin.entity.vo.dept_vo import DeptModel
+# from module_admin.entity.vo.post_vo import PostModel
 from module_admin.entity.vo.role_vo import RoleModel
 
 
@@ -15,15 +14,15 @@ class TokenData(BaseModel):
     token解析结果
     """
 
-    user_id: Union[int, None] = Field(default=None, description='用户id')
+    user_id: Union[int, None] = Field(default=None, description='用户ID')
 
 
 class UserModel(BaseModel):
     """
-    用户表对应模型
+    用户表对应pydantic模型
     """
 
-    model_config = ConfigDict(alias_generator=to_camel, from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
     user_id: Optional[int] = Field(default=None, description='用户ID')
     dept_id: Optional[int] = Field(default=None, description='部门ID')
@@ -91,31 +90,22 @@ class UserModel(BaseModel):
 
 class UserRoleModel(BaseModel):
     """
-    用户和角色关联模型
+    用户和角色关联表对应pydantic模型
     """
 
-    model_config = ConfigDict(alias_generator=to_camel, from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
-    user_id: Optional[int] = Field(default=None, description='用户id')
-    role_id: Optional[int] = Field(default=None, description='角色id')
+    user_id: Optional[int] = Field(default=None, description='用户ID')
+    role_id: Optional[int] = Field(default=None, description='角色ID')
 
 
 class UserInfoModel(UserModel):
-    """
-    用户详情模型
-    """
-    role_ids: Optional[Union[str, None]] = Field(default=None, description='角色id')
+    role_ids: Optional[Union[str, None]] = Field(default=None, description='角色ID信息')
     dept: Optional[Union[DeptModel, None]] = Field(default=None, description='部门信息')
     role: Optional[List[Union[RoleModel, None]]] = Field(default=[], description='角色信息')
 
 
 class CurrentUserModel(BaseModel):
-    """
-    当前用户信息
-    """
-
-    model_config = ConfigDict(alias_generator=to_camel)
-
     permissions: List = Field(description='权限信息')
     roles: List = Field(description='角色信息')
     user: Union[UserInfoModel, None] = Field(description='用户信息')
@@ -125,7 +115,6 @@ class UserDetailModel(BaseModel):
     """
     获取用户详情信息响应模型
     """
-    model_config = ConfigDict(alias_generator=to_camel)
 
     data: Optional[Union[UserInfoModel, None]] = Field(default=None, description='用户信息')
     role_ids: Optional[List] = Field(default=None, description='角色ID信息')
@@ -134,9 +123,8 @@ class UserDetailModel(BaseModel):
 
 class UserProfileModel(BaseModel):
     """
-    用户个人信息响应模型
+    获取个人信息响应模型
     """
-    model_config = ConfigDict(alias_generator=to_camel)
 
     data: Union[UserInfoModel, None] = Field(description='用户信息')
     role_group: Union[str, None] = Field(description='角色信息')
@@ -144,18 +132,18 @@ class UserProfileModel(BaseModel):
 
 class UserQueryModel(UserModel):
     """
-    用户查询，不分页
+    用户管理不分页查询模型
     """
 
     begin_time: Optional[str] = Field(default=None, description='开始时间')
     end_time: Optional[str] = Field(default=None, description='结束时间')
 
 
-@as_query
 class UserPageQueryModel(UserQueryModel):
     """
-    用户分页查询
+    用户管理分页查询模型
     """
+
     page_num: int = Field(default=1, description='当前页码')
     page_size: int = Field(default=10, description='每页记录数')
 
@@ -177,13 +165,10 @@ class EditUserModel(AddUserModel):
     role: Optional[List] = Field(default=[], description='角色信息')
 
 
-@as_query
 class ResetPasswordModel(BaseModel):
     """
-    重置密码模型
+    修改密码模型
     """
-
-    model_config = ConfigDict(alias_generator=to_camel)
 
     old_password: Optional[str] = Field(default=None, description='旧密码')
     new_password: Optional[str] = Field(default=None, description='新密码')
@@ -212,8 +197,6 @@ class DeleteUserModel(BaseModel):
     删除用户模型
     """
 
-    model_config = ConfigDict(alias_generator=to_camel)
-
     user_ids: str = Field(description='需要删除的用户ID')
     update_by: Optional[str] = Field(default=None, description='更新者')
     update_time: Optional[datetime] = Field(default=None, description='更新时间')
@@ -227,7 +210,6 @@ class UserRoleQueryModel(UserModel):
     role_id: Optional[int] = Field(default=None, description='角色ID')
 
 
-@as_query
 class UserRolePageQueryModel(UserRoleQueryModel):
     """
     用户角色关联管理分页查询模型
@@ -250,19 +232,14 @@ class UserRoleResponseModel(BaseModel):
     用户角色关联管理列表返回模型
     """
 
-    model_config = ConfigDict(alias_generator=to_camel)
-
     roles: List[Union[SelectedRoleModel, None]] = Field(default=[], description='角色信息')
     user: UserInfoModel = Field(description='用户信息')
 
 
-@as_query
 class CrudUserRoleModel(BaseModel):
     """
     新增、删除用户关联角色及角色关联用户模型
     """
-
-    model_config = ConfigDict(alias_generator=to_camel)
 
     user_id: Optional[int] = Field(default=None, description='用户ID')
     user_ids: Optional[str] = Field(default=None, description='用户ID信息')

@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, DateTime, Integer, String
-from config.database import Base
+from utils.database import Base
 
 
 class SysMenu(Base):

@@ -7,28 +7,26 @@ from typing import Type
 
 def as_query(cls: Type[BaseModel]):
     """
-    pydantic 模型查询参数装饰器，将pydantic模型用于接收查询参数
-    :param cls:
-    :return:
+    pydantic模型查询参数装饰器，将pydantic模型用于接收查询参数
     """
-
     new_parameters = []
+
     for field_name, model_field in cls.model_fields.items():
-        model_field: FieldInfo
+        model_field: FieldInfo  # type: ignore
 
         if not model_field.is_required():
             new_parameters.append(
                 inspect.Parameter(
-                    model_field.alias,
+                    field_name,
                     inspect.Parameter.POSITIONAL_ONLY,
                     default=Query(default=model_field.default, description=model_field.description),
-                    annotation=model_field.annotation
+                    annotation=model_field.annotation,
                 )
             )
         else:
             new_parameters.append(
                 inspect.Parameter(
-                    model_field.alias,
+                    field_name,
                     inspect.Parameter.POSITIONAL_ONLY,
                     default=Query(..., description=model_field.description),
                     annotation=model_field.annotation,
@@ -40,7 +38,7 @@ def as_query(cls: Type[BaseModel]):
 
     sig = inspect.signature(as_query_func)
     sig = sig.replace(parameters=new_parameters)
-    as_query_func.__signature__ = sig
+    as_query_func.__signature__ = sig  # type: ignore
     setattr(cls, 'as_query', as_query_func)
     return cls
 
@@ -48,18 +46,16 @@ def as_query(cls: Type[BaseModel]):
 def as_form(cls: Type[BaseModel]):
     """
     pydantic模型表单参数装饰器，将pydantic模型用于接收表单参数
-    :param cls:
-    :return:
     """
-
     new_parameters = []
+
     for field_name, model_field in cls.model_fields.items():
-        model_field: FieldInfo
+        model_field: FieldInfo  # type: ignore
 
         if not model_field.is_required():
             new_parameters.append(
                 inspect.Parameter(
-                    model_field.alias,
+                    field_name,
                     inspect.Parameter.POSITIONAL_ONLY,
                     default=Form(default=model_field.default, description=model_field.description),
                     annotation=model_field.annotation,
@@ -68,7 +64,7 @@ def as_form(cls: Type[BaseModel]):
         else:
             new_parameters.append(
                 inspect.Parameter(
-                    model_field.alias,
+                    field_name,
                     inspect.Parameter.POSITIONAL_ONLY,
                     default=Form(..., description=model_field.description),
                     annotation=model_field.annotation,
@@ -80,6 +76,6 @@ def as_form(cls: Type[BaseModel]):
 
     sig = inspect.signature(as_form_func)
     sig = sig.replace(parameters=new_parameters)
-    as_form_func.__signature__ = sig
-    setattr(cls, 'as_from', as_form_func)
+    as_form_func.__signature__ = sig  # type: ignore
+    setattr(cls, 'as_form', as_form_func)
     return cls

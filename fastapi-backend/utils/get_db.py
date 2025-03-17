@@ -1,4 +1,4 @@
-from config.database import async_engine, AsyncSessionLocal, Base
+from utils.database import async_engine, AsyncSessionLocal, Base
 from utils.log_util import logger
 
 

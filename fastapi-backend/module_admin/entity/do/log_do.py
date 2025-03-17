@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import BigInteger, Column, DateTime, Index, Integer, String
-from config.database import Base
+from utils.database import Base
 
 
 class SysLogininfor(Base):

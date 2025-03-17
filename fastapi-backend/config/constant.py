@@ -83,9 +83,9 @@ class JobConstant:
     JOB_ERROR_LIST = [
         'app',
         'config',
-        'sub_applications.exceptions',
+        'exceptions',
         'import ',
-        'sub_applications.middlewares',
+        'middlewares',
         'module_admin',
         'open(',
         'os.',

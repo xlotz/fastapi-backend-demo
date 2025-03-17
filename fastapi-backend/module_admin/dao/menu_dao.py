@@ -1,4 +1,4 @@
-from sqlalchemy import select, update, delete, func, and_
+from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from module_admin.entity.do.menu_do import SysMenu
 from module_admin.entity.do.role_do import SysRole, SysRoleMenu
@@ -12,22 +12,22 @@ class MenuDao:
     """
 
     @classmethod
-    async def get_menu_detail_by_id(cls, db: AsyncSession, menu_id):
+    async def get_menu_detail_by_id(cls, db: AsyncSession, menu_id: int):
         """
-        根据id获取菜单详情
+        根据菜单id 获取菜单详细信息
         :param db:
         :param menu_id:
         :return:
         """
         menu_info = (await db.execute(
-            select(SysMenu).where(SysMenu.menu_id == menu_id))
-        ).scalars().first()
+            select(SysMenu).where(SysMenu.menu_id == menu_id)
+        )).scalars().first()
         return menu_info
 
     @classmethod
     async def get_menu_detail_by_info(cls, db: AsyncSession, menu: MenuModel):
         """
-        根据参数获取菜单详情
+        根据查询参数获取菜单详情
         :param db:
         :param menu:
         :return:
@@ -42,72 +42,82 @@ class MenuDao:
         return menu_info
 
     @classmethod
-    async def get_menu_list_for_tree(cls, db: AsyncSession, user_id, role):
+    async def get_menu_list_for_tree(cls, db: AsyncSession, user_id: int, role_list: list):
         """
-        根据角色信息获取所有在用菜单列表
+        根据角色信息获取所在菜单列表信息
         :param db:
         :param user_id:
-        :param role:
+        :param role_list:
         :return:
         """
-        role_id_list = [item.role_id for item in role]
+        role_id_list = [item.role_id for item in role_list]
         if 1 in role_id_list:
-            menu_query = select(SysMenu).where(SysMenu.status == '0').order_by(SysMenu.order_num).distinct()
+            menu_query_all = (await db.execute(
+                select(SysMenu).where(SysMenu.status == '0').order_by(SysMenu.order_num).distinct()
+            )).scalars().all()
         else:
-            menu_query = select(SysMenu).select_from(SysUser).where(
-                SysUser.status == '0', SysUser.del_flag == '0', SysUser.user_id == user_id
-            ).join(
-                SysUserRole, SysUser.user_id == SysUserRole.user_id, isouter=True,
-            ).join(
-                SysRole, and_(
-                    SysUserRole.role_id == SysRole.role_id, SysRole.status == '0', SysRole.del_flag == '0'
-                ), isouter=True,
-            ).join(
-                SysRoleMenu, SysRole.role_id == SysRoleMenu.role_id, isouter=True,
-            ).join(
-                SysMenu, and_(SysRoleMenu.menu_id == SysMenu.menu_id, SysMenu.status == '0')
-            ).order_by(SysMenu.order_num).distinct()
-
-        print(menu_query)
-
-        menu_query_all = (await db.execute(menu_query)).scalars().all()
+            menu_query_all = (await db.execute(
+                select(SysMenu).select_from(SysUser).where(
+                    SysUser.status == '0', SysUser.del_flag == '0', SysUser.user_id == user_id
+                ).join(
+                    SysUserRole,
+                    SysUser.user_id == SysUserRole.user_id, isouter=True
+                ).join(
+                    SysRole,
+                    and_(SysUserRole.role_id == SysRole.role_id, SysRole.status == '0', SysRole.del_flag == '0'),
+                    isouter=True,
+                ).join(
+                    SysRoleMenu,
+                    SysRole.role_id == SysRoleMenu.role_id, isouter=True,
+                ).join(
+                    SysMenu,
+                    and_(SysRoleMenu.menu_id == SysMenu.menu_id, SysMenu.status == '0')
+                ).order_by(SysMenu.order_num).distinct()
+            )).scalars().all()
         return menu_query_all
 
     @classmethod
-    async def get_menu_list(cls, db: AsyncSession, page_obj: MenuQueryModel, user_id, role):
+    async def get_menu_list(cls, db: AsyncSession, page_obj: MenuQueryModel, user_id: int, role_list: list):
         """
-        根据查询产生获取菜单列表
+        根据参数参数获取菜单列表信息
         :param db:
         :param page_obj:
         :param user_id:
-        :param role:
+        :param role_list:
         :return:
         """
-        role_id_list = [item.role_id for item in role]
+        role_id_list = [item.role_id for item in role_list]
         if 1 in role_id_list:
-            menu_query = select(SysMenu).where(
-                SysMenu.status == page_obj.status if page_obj.status else True,
-                SysMenu.menu_name.like(f'%{page_obj.menu_name}%') if page_obj.menu_name else True,
-            ).order_by(SysMenu.order_num).distinct()
-        else:
-            select(SysMenu).select_from(SysUser).where(
-                SysUser.status == '0', SysUser.del_flag == '0', SysUser.user_id == user_id
-            ).join(
-                SysUserRole, SysUser.user_id == SysUserRole.user_id, isouter=True
-            ).join(
-                SysRole, and_(SysUserRole.role_id == SysRole.role_id, SysRole.status == '0', SysRole.del_flag == '0'),
-                isouter=True,
-            ).join(
-                SysRoleMenu, SysRole.role_id == SysRoleMenu.role_id, isouter=True
-            ).join(
-                SysMenu, and_(
-                    SysRoleMenu.menu_id == SysMenu.menu_id,
+            menu_query_all = (await db.execute(
+                select(SysMenu).where(
                     SysMenu.status == page_obj.status if page_obj.status else True,
                     SysMenu.menu_name.like(f'%{page_obj.menu_name}%') if page_obj.menu_name else True,
-                )
-            ).order_by(SysMenu.order_num).distinct()
+                ).order_by(SysMenu.order_num).distinct()
+            )).scalars().all()
+        else:
+            menu_query_all = (await db.execute(
+                select(SysMenu).select_from(SysUser).where(
+                    SysUser.user_id == user_id, SysUser.status == '0', SysUser.del_flag == '0'
+                ).join(
+                    SysUserRole,
+                    SysUser.user_id == SysUserRole.user_id, isouter=True,
+                ).join(
+                    SysRole,
+                    and_(SysUserRole.role_id == SysRole.role_id, SysRole.status == '0', SysRole.del_flag == '0'),
+                    isouter=True,
+                ).join(
+                    SysRoleMenu,
+                    SysRole.role_id == SysRoleMenu.role_id, isouter=True,
+                ).join(
+                    SysMenu,
+                    and_(
+                        SysRoleMenu.menu_id == SysMenu.menu_id,
+                        SysMenu.status == page_obj.status if page_obj.status else True,
+                        SysMenu.menu_name.like(f'%{page_obj.menu_name}%') if page_obj.menu_name else True,
+                    )
+                ).order_by(SysMenu.order_num).distinct()
+            )).scalars().all()
 
-        menu_query_all = (await db.execute(menu_query)).scalars().all()
         return menu_query_all
 
     @classmethod
@@ -121,7 +131,6 @@ class MenuDao:
         db_menu = SysMenu(**menu.model_dump())
         db.add(db_menu)
         await db.flush()
-
         return db_menu
 
     @classmethod
@@ -137,7 +146,7 @@ class MenuDao:
     @classmethod
     async def delete_menu_dao(cls, db: AsyncSession, menu: MenuModel):
         """
-        删除菜单
+        根据id删除菜单
         :param db:
         :param menu:
         :return:
@@ -145,29 +154,30 @@ class MenuDao:
         await db.execute(delete(SysMenu).where(SysMenu.menu_id.in_([menu.menu_id])))
 
     @classmethod
-    async def has_child_by_menu_id_dao(cls, db: AsyncSession, menu_id):
+    async def count_child_by_menu_id_dao(cls, db: AsyncSession, menu_id: int):
         """
-        根据菜单id查询菜单关联子菜单的数量
+        根据菜单id查询菜单关联子菜单
         :param db:
         :param menu_id:
         :return:
         """
-        menu_count = (await db.execute(
+        child_menu_count = (await db.execute(
             select(func.count('*')).select_from(SysMenu).where(SysMenu.parent_id == menu_id)
         )).scalar()
-        return menu_count
+        return child_menu_count
 
     @classmethod
-    async def check_menu_exist_role_dao(cls, db: AsyncSession, menu_id):
+    async def count_menu_exist_role_dao(cls, db: AsyncSession, menu_id: int):
         """
-        根据id查询菜单关联角色数量
+        根据菜单id查询裁断关联角色的数量
         :param db:
         :param menu_id:
         :return:
         """
         role_count = (await db.execute(
-            select(func.count('*')).select_from(SysRoleMenu).where(SysRoleMenu.menu_id == menu_id)
+            select(func.count('*')).select_from(SysRoleMenu).where(
+                SysRoleMenu.menu_id == menu_id
+            )
         )).scalar()
-
         return role_count
 

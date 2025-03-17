@@ -13,11 +13,11 @@ class AppSettings(BaseSettings):
     """
 
     app_env: str = 'dev'
-    app_name: str = 'fastapi-backend-demo'
+    app_name: str = 'Dash-FasAPI-Admin'
     app_root_path: str = '/dev-api'
     app_host: str = '0.0.0.0'
     app_port: int = 9099
-    app_version: str = '1.0.0'
+    app_version: str = '2.0.0'
     app_reload: bool = True
     app_ip_location_query: bool = True
     app_same_time_login: bool = True
@@ -28,7 +28,7 @@ class JwtSettings(BaseSettings):
     Jwt配置
     """
 
-    jwt_secret_key: str = 'ef3242a1bcccfbb21a6bb69ff0e8e5b3'
+    jwt_secret_key: str = '90a4bc75386ab48ef99d280a63ae4b1e0a19153d80a965b4d74ddb791908c2b2'
     jwt_algorithm: str = 'HS256'
     jwt_expire_minutes: int = 1440
     jwt_redis_expire_minutes: int = 30
@@ -64,25 +64,13 @@ class RedisSettings(BaseSettings):
     redis_database: int = 2
 
 
-class SwaggerSettings:
-    """
-    本地ui文件
-    """
-
-    Swagger_PATH = os.path.join(os.path.abspath(os.getcwd()), 'static/swagger-ui')
-
-    # def __init__(self):
-    #     if not os.path.exists(self.Swagger_PATH):
-    #         os.makedirs(self.Swagger_PATH)
-
-
 class UploadSettings:
     """
     上传配置
     """
 
     UPLOAD_PREFIX = '/profile'
-    UPLOAD_PATH = 'files/upload_path'
+    UPLOAD_PATH = 'df_admin/upload_path'
     UPLOAD_MACHINE = 'A'
     DEFAULT_ALLOWED_EXTENSION = [
         # 图片
@@ -113,7 +101,7 @@ class UploadSettings:
         # pdf
         'pdf',
     ]
-    DOWNLOAD_PATH = 'files/download_path'
+    DOWNLOAD_PATH = 'df_admin/download_path'
 
     def __init__(self):
         if not os.path.exists(self.UPLOAD_PATH):
@@ -183,17 +171,9 @@ class GetConfig:
         return RedisSettings()
 
     @lru_cache()
-    def get_swagger_config(self):
-        """
-        获取swagger配置
-        :return:
-        """
-        return SwaggerSettings()
-
-    @lru_cache()
     def get_upload_config(self):
         """
-        获取上传路径配置
+        获取数据库配置
         """
         # 实例上传配置
         return UploadSettings()
@@ -243,9 +223,7 @@ JwtConfig = get_config.get_jwt_config()
 DataBaseConfig = get_config.get_database_config()
 # Redis配置
 RedisConfig = get_config.get_redis_config()
-# Swagger配置
-SwaggerConfig = get_config.get_swagger_config()
 # 上传配置
 UploadConfig = get_config.get_upload_config()
 # 日志配置
-LogPathConfig = get_config.get_log_config()
+LogConfig = get_config.get_log_config()

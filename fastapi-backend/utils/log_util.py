@@ -1,13 +1,12 @@
 import os
 import time
 from loguru import logger
-from config.env import LogPathConfig
+from config.env import LogConfig
 
 # log_path = os.path.join(os.getcwd(), 'logs')
-# if not os.path.exists(log_path):
-#     os.mkdir(log_path)
-
-log_path = LogPathConfig.LOG_PATH
+log_path = LogConfig.LOG_PATH
+if not os.path.exists(log_path):
+    os.mkdir(log_path)
 
 log_path_error = os.path.join(log_path, f'{time.strftime("%Y-%m-%d")}_error.log')
 

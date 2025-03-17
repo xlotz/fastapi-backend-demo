@@ -13,14 +13,27 @@ captchaController = APIRouter()
 
 @captchaController.get('/captchaImage')
 async def get_captcha_image(request: Request):
-    login_is_enabled = await request.app.state.redis.get(
-        f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled')
-    captcha_enabled = True if login_is_enabled == 'true' else False
-    register_enabled = (
+    """
+    获取验证码
+    :param request:
+    :return:
+    """
+    captcha_enabled = (
         True
-        if await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.registerUser') == 'true'
+        if await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled') == 'true'
         else False
     )
+    forget_enabled = (
+        True
+        if await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled') == 'true'
+        else False
+    )
+    register_enabled = (
+        True
+        if await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled') == 'true'
+        else False
+    )
+
     session_id = str(uuid.uuid4())
     captcha_result = await CaptchaService.create_captcha_image_service()
     image = captcha_result[0]
@@ -29,15 +42,14 @@ async def get_captcha_image(request: Request):
         f'{RedisInitKeyConfig.CAPTCHA_CODES.key}:{session_id}', computed_result, ex=timedelta(minutes=2)
     )
 
-    model_content = CaptchaCode(
-        captchaEnabled=captcha_enabled, registerEnabled=register_enabled, img=image, uuid=session_id
-    )
-    logger.info(model_content)
+    logger.info(f'编号为{session_id}的会话获取图片验证码成功')
 
     return ResponseUtil.success(
         model_content=CaptchaCode(
-            captchaEnabled=captcha_enabled, registerEnabled=register_enabled, img=image, uuid=session_id
+            captcha_enabled=captcha_enabled,
+            forget_enabled=forget_enabled,
+            register_enabled=forget_enabled,
+            img=image,
+            uuid=session_id,
         )
     )
-
-

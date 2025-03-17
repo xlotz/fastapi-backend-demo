@@ -6,13 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from config.enums import BusinessType, RedisInitKeyConfig
 from config.env import AppConfig, JwtConfig
-from utils.get_db import get_db
-# from module_admin.annotation.log_annotation import Log
+from module_admin.annotation.log_annotation import Log
 from module_admin.entity.vo.common_vo import CrudResponseModel
-from module_admin.entity.vo.login_vo import UserLogin, Token
-from module_admin.entity.vo.user_vo import CurrentUserModel, EditUserModel
-from module_admin.service.login_service import CustomOAuth2PasswordRequestForm, LoginService, oauth2_scheme
+from module_admin.entity.vo.login_vo import UserLogin, UserRegister, SmsCode, Token
+from module_admin.entity.vo.user_vo import CurrentUserModel, EditUserModel, ResetUserModel
+from module_admin.service.login_service import CustomOAuth2PasswordRequestForm, LoginService, oauth2_schema
 from module_admin.service.user_service import UserService
+from utils.get_db import get_db
 from utils.log_util import logger
 from utils.response_util import ResponseUtil
 
@@ -21,9 +21,11 @@ loginController = APIRouter()
 
 
 @loginController.post('/login', response_model=Token)
+@Log(title='登录', business_type=BusinessType.OTHER, log_type='login')
 async def login(
-        request: Request, form_data: CustomOAuth2PasswordRequestForm = Depends(),
-        db: AsyncSession = Depends(get_db)
+        request: Request,
+        form_data: CustomOAuth2PasswordRequestForm = Depends(),
+        db: AsyncSession = Depends(get_db),
 ):
     """
     登录
@@ -32,22 +34,23 @@ async def login(
     :param db:
     :return:
     """
+    captcha_enabled = (
+        True
+        if await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled')
+           == 'true'
+        else False
+    )
 
-    #is_enabled = await request.app.state.redis.get(f'{RedisInitKeyConfig.SYS_CONFIG.key}:sys.account.captchaEnabled')
-    # captcha_enabled = True if is_enabled == 'true' else False
-    # logger.info(f'是否启用验证码： {captcha_enabled}')
-    logger.warning(f'xxxxxxxxxxxxx {form_data}')
     user = UserLogin(
-        userName=form_data.username,
+        user_name=form_data.username,
         password=form_data.password,
         code=form_data.code,
         uuid=form_data.uuid,
-        loginInfo=form_data.login_info,
-        captchaEnabled=True,
+        login_info=form_data.login_info,
+        captcha_enabled=captcha_enabled,
     )
-    logger.info(f'-----------------{user}')
+
     result = await LoginService.authenticate_user(request, db, user)
-    logger.info(f'-----------------{result[0]}, {user.login_info}')
     access_token_expires = timedelta(minutes=JwtConfig.jwt_expire_minutes)
     session_id = str(uuid.uuid4())
     access_token = await LoginService.create_access_token(
@@ -68,6 +71,7 @@ async def login(
             ex=timedelta(minutes=JwtConfig.jwt_redis_expire_minutes),
         )
     else:
+
         # 此方法可实现同一账号同一时间只能登录一次
         await request.app.state.redis.set(
             f'{RedisInitKeyConfig.ACCESS_TOKEN.key}:{result[0].user_id}',
@@ -76,34 +80,42 @@ async def login(
         )
 
     await UserService.edit_user_services(
-        db, EditUserModel(userId=result[0].user_id, loginDate=datetime.now(), type='status')
+        db, EditUserModel(user_id=result[0].user_id, login_date=datetime.now(), type='status')
     )
+
     logger.info('登录成功')
 
     # 判断请求是否来自于api文档，如果是返回指定格式的结果，用于修复api文档认证成功后token显示undefined的bug
-    request_from_docs = request.headers.get('referer').endswith('docs') if request.headers.get('referer') else False
+    request_from_swagger = request.headers.get('referer').endswith('docs') if request.headers.get('referer') else False
     request_from_redoc = request.headers.get('referer').endswith('redoc') if request.headers.get('referer') else False
-    if request_from_docs or request_from_redoc:
+    if request_from_swagger or request_from_redoc:
         return {'access_token': access_token, 'token_type': 'Bearer'}
     return ResponseUtil.success(msg='登录成功', dict_content={'token': access_token})
 
 
 @loginController.get('/getInfo', response_model=CurrentUserModel)
 async def get_login_user_info(
-        request: Request, current_user: CurrentUserModel = Depends(LoginService.get_current_user)
+        request: Request,
+        current_user: CurrentUserModel = Depends(oauth2_schema),
 ):
+    """
+    获取登录信息
+    :param request:
+    :param current_user:
+    :return:
+    """
     logger.info('获取成功')
-    logger.info(f'{LoginService.get_current_user}')
-    return ResponseUtil.success(model_content=current_user)
+    return ResponseUtil.success(model_content=current_user, msg='获取成功')
 
 
 @loginController.get('/getRouters')
 async def get_login_user_routers(
-        request: Request, current_user: CurrentUserModel = Depends(LoginService.get_current_user),
+        request: Request,
+        current_user: CurrentUserModel = Depends(oauth2_schema),
         db: AsyncSession = Depends(get_db)
 ):
     """
-    获取用户路由
+    获取登录路由
     :param request:
     :param current_user:
     :param db:
@@ -111,23 +123,72 @@ async def get_login_user_routers(
     """
     user_routers = await LoginService.get_current_user_routers(current_user.user.user_id, db)
     logger.info('获取成功')
-    return ResponseUtil.success(data=user_routers)
+    return ResponseUtil.success(data=current_user)
+
+
+@loginController.post('/register', response_model=CrudResponseModel)
+async def register_user(
+        request: Request,
+        user: UserRegister,
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    用户注册
+    :param request:
+    :param user:
+    :param db:
+    :return:
+    """
+    user_register = await LoginService.register_user_services(request, db, user)
+    logger.info(user_register.message)
+    return ResponseUtil.success(msg=user_register.message)
+
+
+@loginController.post('/getSmsCode', response_model=SmsCode)
+async def get_sms_code(
+        request: Request,
+        user: ResetUserModel,
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    获取smscode
+    :param request:
+    :param user:
+    :param db:
+    :return:
+    """
+    sms_result = await LoginService.get_sms_code_services(request, db, user)
+    logger.info('获取成功')
+    return ResponseUtil.success(data=sms_result)
+
+
+@loginController.post('/forgetPwd', response_model=CrudResponseModel)
+async def forget_user_pwd(
+        request: Request,
+        forget_user: ResetUserModel,
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    忘记密码
+    :param request:
+    :param forget_user:
+    :param db:
+    :return:
+    """
+    forget_user_result = await LoginService.forget_user_services(request, db, forget_user)
+    logger.info(forget_user_result.message)
+    return ResponseUtil.success(data=forget_user_result, msg=forget_user_result.message)
 
 
 @loginController.post('/logout')
-async def logout(request: Request, token: Optional[str] = Depends(oauth2_scheme)):
-    """
-    用户登出
-    :param request:
-    :param token:
-    :return:
-    """
-    logger.info(f'logout_token ---------------- {token}')
+async def logout(
+        request: Request,
+        token: Optional[str] = Depends(oauth2_schema)
+):
     payload = jwt.decode(
         token, JwtConfig.jwt_secret_key, algorithms=[JwtConfig.jwt_algorithm], options={'verify_exp': False}
     )
-    logger.info(f'------------------{payload}')
-    session_id = payload.get('session_id')
+    session_id: str = payload.get('session_id')
     await LoginService.logout_services(request, session_id)
-    logger.info('登出成功')
-    return ResponseUtil.success(msg='登出成功')
+    logger.info('退出成功')
+    return ResponseUtil.success(msg='退出成功')
